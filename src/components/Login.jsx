@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 
 const Login = ({ onLogin }) => {
