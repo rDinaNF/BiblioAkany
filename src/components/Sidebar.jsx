@@ -4,7 +4,7 @@ const Sidebar = ({ user, currentCategory, onCategoryChange, onLogout }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h1 className="logo"><span>📚</span> Biblio</h1>
+        <h1 className="logo"><span>📚</span> Biblio Akany Ando</h1>
       </div>
 
       <div className="sidebar-nav">
