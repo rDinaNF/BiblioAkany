@@ -1,17 +1,39 @@
-import React, { useState } from 'react';
+import { supabase } from '../supabaseClient';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simple mock authentication
-    if (username.trim() && password.length >= 4) {
-      onLogin(username);
-    } else {
-      setError('Veuillez entrer un nom d\'utilisateur et un mot de passe (min 4 caractères).');
+    setError('');
+
+    if (!username.trim() || !password.trim()) {
+      setError('Veuillez entrer un nom d\'utilisateur et un mot de passe.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data, error: sbError } = await supabase
+        .from('admins')
+        .select('*')
+        .eq('username', username.trim())
+        .eq('password', password) // Still simple text check as requested
+        .single();
+
+      if (sbError || !data) {
+        setError('Nom d\'utilisateur ou mot de passe incorrect.');
+      } else {
+        onLogin(data.username);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Une erreur est survenue lors de la connexion.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,8 +73,8 @@ const Login = ({ onLogin }) => {
             />
           </div>
 
-          <button type="submit" className="btn-primary btn-login">
-            Se Connecter
+          <button type="submit" className="btn-primary btn-login" disabled={loading}>
+            {loading ? 'Connexion...' : 'Se Connecter'}
           </button>
         </form>
       </div>
