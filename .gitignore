@@ -1,0 +1,39 @@
+# --- Node.js / Vite / React ---
+node_modules/
+dist/
+build/
+.cache/
+.tmp/
+.vite/
+
+# --- Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Environment variables ---
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.swp
+
+# --- Tests / Coverage ---
+coverage/
+*.lcov
+
+# --- Misc ---
+*.pid
+*.seed
+*.tgz
