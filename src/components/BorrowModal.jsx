@@ -4,6 +4,7 @@ const BorrowModal = ({ isOpen, onClose, onSave, bookTitle }) => {
   const [borrowerData, setBorrowerData] = useState({
     name: '',
     date: new Date().toISOString().split('T')[0],
+    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 14 days
   });
 
   useEffect(() => {
@@ -11,6 +12,7 @@ const BorrowModal = ({ isOpen, onClose, onSave, bookTitle }) => {
       setBorrowerData({
         name: '',
         date: new Date().toISOString().split('T')[0],
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       });
     }
   }, [isOpen]);
@@ -51,6 +53,15 @@ const BorrowModal = ({ isOpen, onClose, onSave, bookTitle }) => {
               required
               value={borrowerData.date}
               onChange={e => setBorrowerData({ ...borrowerData, date: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Date de retour prévue</label>
+            <input
+              type="date"
+              required
+              value={borrowerData.dueDate}
+              onChange={e => setBorrowerData({ ...borrowerData, dueDate: e.target.value })}
             />
           </div>
           <div className="modal-actions">

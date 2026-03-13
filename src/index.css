@@ -725,17 +725,27 @@ h3 {
 }
 
 .toast {
-  background-color: var(--surface-color);
-  border: 1px solid var(--success-color);
+  background-color: rgba(22, 27, 34, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(88, 166, 255, 0.3);
   color: var(--text-primary);
-  padding: 1rem 1.5rem;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  padding: 1.25rem 2rem;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  animation: toastFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1), toastFadeOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) 2.7s forwards;
+  gap: 1rem;
+  animation: toastFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1), toastFadeOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) 2.6s forwards;
   pointer-events: auto;
+  border-left: 4px solid var(--primary-color);
+}
+
+.toast.success {
+  border-left-color: var(--success-color);
+}
+
+.toast.info {
+  border-left-color: var(--primary-color);
 }
 
 .toast-icon {

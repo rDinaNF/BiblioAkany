@@ -3,19 +3,13 @@ import Navigation from './components/Navigation'
 import BookCard from './components/BookCard'
 import BookModal from './components/BookModal'
 import BorrowModal from './components/BorrowModal'
+import Sidebar from './components/Sidebar'
 import Login from './components/Login'
+import { supabase } from './supabaseClient'
 
 function App() {
-  const [books, setBooks] = useState(() => {
-    const saved = localStorage.getItem('library_books')
-    if (saved) {
-      return JSON.parse(saved)
-    }
-    return [
-      { id: 1, title: 'L\'Étranger', author: 'Albert Camus', status: 'read', coverColor: 'linear-gradient(135deg, #FF6B6B, #C0392B)' },
-      { id: 2, title: 'Les Misérables', author: 'Victor Hugo', status: 'unread', coverColor: 'linear-gradient(135deg, #4facfe, #00f2fe)' }
-    ]
-  })
+  const [books, setBooks] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('library_auth') === 'true'
@@ -31,23 +25,62 @@ function App() {
   const [editingBook, setEditingBook] = useState(null)
 
   const fileInputRef = useRef(null)
-  const [notification, setNotification] = useState(null)
+  const [notifications, setNotifications] = useState([])
   const [currentCategory, setCurrentCategory] = useState('all') // 'all' or 'borrowed'
 
   const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false)
   const [borrowingBook, setBorrowingBook] = useState(null)
 
   useEffect(() => {
-    localStorage.setItem('library_books', JSON.stringify(books))
-  }, [books])
+    fetchBooks()
+  }, [])
+
+  const fetchBooks = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      const mappedBooks = data.map(b => ({
+        id: b.id,
+        title: b.title,
+        author: b.author,
+        status: b.status,
+        coverColor: b.cover_color,
+        coverImage: b.cover_image,
+        borrower: b.borrower_name ? {
+          name: b.borrower_name,
+          date: b.borrow_date,
+          dueDate: b.due_date
+        } : null
+      }))
+      setBooks(mappedBooks)
+    } catch (error) {
+      console.error('Error fetching books:', error.message)
+      addNotification('Erreur lors du chargement des livres', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addNotification = (message, type = 'success') => {
+    const id = Date.now()
+    setNotifications(prev => [...prev, { id, message, type }])
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id))
+    }, 3000)
+  }
 
   const handleLogin = (username) => {
     setIsAuthenticated(true)
     setUser(username)
     localStorage.setItem('library_auth', 'true')
     localStorage.setItem('library_user', username)
-    setNotification({ message: 'Connexion réussie !', type: 'success' })
-    setTimeout(() => setNotification(null), 3000)
+    addNotification('Connexion réussie !', 'success')
   }
 
   const handleLogout = () => {
@@ -55,8 +88,7 @@ function App() {
     setUser('')
     localStorage.removeItem('library_auth')
     localStorage.removeItem('library_user')
-    setNotification({ message: 'Déconnexion réussie !', type: 'info' })
-    setTimeout(() => setNotification(null), 3000)
+    addNotification('Déconnexion réussie !', 'info')
   }
 
   const handleStatusChange = (id, newStatus) => {
@@ -71,33 +103,100 @@ function App() {
     }
   }
 
-  const handleSaveBorrowInfo = (borrowerData) => {
-    setBooks(books.map(b =>
-      b.id === borrowingBook.id
-        ? { ...b, status: 'unread', borrower: borrowerData }
-        : b
-    ))
-    setNotification({ message: `Livre emprunté par \${borrowerData.name}`, type: 'success' })
-    setTimeout(() => setNotification(null), 3000)
-  }
+  const handleSaveBorrowInfo = async (borrowerData) => {
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({
+          status: 'unread',
+          borrower_name: borrowerData.name,
+          borrow_date: borrowerData.date,
+          due_date: borrowerData.dueDate
+        })
+        .eq('id', borrowingBook.id)
 
-  const handleReturnBook = (id) => {
-    setBooks(books.map(b =>
-      b.id === id
-        ? { ...b, status: 'read', borrower: null }
-        : b
-    ))
-    setNotification({ message: 'Livre rendu et maintenant disponible', type: 'success' })
-    setTimeout(() => setNotification(null), 3000)
-  }
+      if (error) throw error
 
-  const handleSaveBook = (bookData) => {
-    if (editingBook) {
-      setBooks(books.map(b => b.id === editingBook.id ? { ...b, ...bookData } : b))
-    } else {
-      setBooks([...books, { ...bookData, id: Date.now() }])
+      setBooks(books.map(b =>
+        b.id === borrowingBook.id
+          ? { ...b, status: 'unread', borrower: borrowerData }
+          : b
+      ))
+      addNotification(`Livre emprunté par \${borrowerData.name}`, 'success')
+    } catch (error) {
+      console.error('Error borrowing book:', error.message)
+      addNotification('Erreur lors de l\'emprunt', 'error')
     }
-    setEditingBook(null)
+  }
+
+  const handleReturnBook = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({
+          status: 'read',
+          borrower_name: null,
+          borrow_date: null,
+          due_date: null
+        })
+        .eq('id', id)
+
+      if (error) throw error
+
+      setBooks(books.map(b =>
+        b.id === id
+          ? { ...b, status: 'read', borrower: null }
+          : b
+      ))
+      addNotification('Livre rendu et maintenant disponible', 'success')
+    } catch (error) {
+      console.error('Error returning book:', error.message)
+      addNotification('Erreur lors du rendu du livre', 'error')
+    }
+  }
+
+  const handleSaveBook = async (bookData) => {
+    try {
+      const dbData = {
+        title: bookData.title,
+        author: bookData.author,
+        status: bookData.status || 'read',
+        cover_color: bookData.coverColor,
+        cover_image: bookData.coverImage
+      }
+
+      if (editingBook) {
+        const { error } = await supabase
+          .from('books')
+          .update(dbData)
+          .eq('id', editingBook.id)
+
+        if (error) throw error
+        
+        setBooks(books.map(b => b.id === editingBook.id ? { ...b, ...bookData } : b))
+        addNotification('Livre modifié avec succès')
+      } else {
+        const { data, error } = await supabase
+          .from('books')
+          .insert([dbData])
+          .select()
+
+        if (error) throw error
+        
+        const newBook = {
+          ...bookData,
+          id: data[0].id,
+          borrower: null
+        }
+        setBooks([newBook, ...books])
+        addNotification('Nouveau livre ajouté')
+      }
+    } catch (error) {
+      console.error('Error saving book:', error.message)
+      addNotification('Erreur lors de l\'enregistrement', 'error')
+    } finally {
+      setEditingBook(null)
+    }
   }
 
   const handleEdit = (book) => {
@@ -119,7 +218,7 @@ function App() {
     if (!file) return
 
     const reader = new FileReader()
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const text = event.target.result
       const lines = text.split(/\r?\n/)
 
@@ -164,7 +263,37 @@ function App() {
       }
 
       if (newBooks.length > 0) {
-        setBooks(prev => [...prev, ...newBooks])
+        const insertData = newBooks.map(b => ({
+          title: b.title,
+          author: b.author,
+          status: b.status,
+          cover_color: b.coverColor
+        }))
+
+        try {
+          const { data, error } = await supabase
+            .from('books')
+            .insert(insertData)
+            .select()
+
+          if (error) throw error
+
+          const fetchedNewBooks = data.map(b => ({
+            id: b.id,
+            title: b.title,
+            author: b.author,
+            status: b.status,
+            coverColor: b.cover_color,
+            coverImage: b.cover_image,
+            borrower: null
+          }))
+
+          setBooks(prev => [...fetchedNewBooks, ...prev])
+          addNotification(`\${newBooks.length} livres importés avec succès !`)
+        } catch (error) {
+          console.error('Error importing books:', error.message)
+          addNotification('Erreur lors de l\'importation', 'error')
+        }
       }
 
       // Reset input so the same file can be imported again if needed
@@ -174,6 +303,38 @@ function App() {
     reader.readAsText(file)
   }
 
+  const handleExportCSV = () => {
+    if (books.length === 0) {
+      addNotification('Aucun livre à exporter', 'info')
+      return
+    }
+
+    const headers = ['Titre', 'Auteur', 'Statut', 'Emprunteur', 'Date Emprunt', 'Date Retour']
+    const csvContent = [
+      headers.join(';'),
+      ...books.map(book => [
+        `"${book.title.replace(/"/g, '""')}"`,
+        `"${book.author.replace(/"/g, '""')}"`,
+        book.status === 'read' ? 'Disponible' : 'Emprunté',
+        book.borrower ? `"${book.borrower.name.replace(/"/g, '""')}"` : '',
+        book.borrower ? book.borrower.date : '',
+        book.borrower ? (book.borrower.dueDate || '') : ''
+      ].join(';'))
+    ].join('\n')
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.setAttribute('href', url)
+    link.setAttribute('download', `bibliotheque_export_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    addNotification('Export CSV réussi !')
+  }
+
   const filteredBooks = books.filter(book => {
     const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       book.author.toLowerCase().includes(searchQuery.toLowerCase());
@@ -181,16 +342,17 @@ function App() {
     return matchesSearch && matchesCategory;
   })
 
-  const renderNotification = () => {
-    if (!notification) return null;
+  const renderNotifications = () => {
     return (
       <div className="toast-container">
-        <div className={`toast \${notification.type || ''}`}>
-          <span className="toast-icon">
-            {notification.type === 'success' ? '✅' : 'ℹ️'}
-          </span>
-          <span className="toast-message">{notification.message}</span>
-        </div>
+        {notifications.map(notification => (
+          <div key={notification.id} className={`toast \${notification.type || ''}`}>
+            <span className="toast-icon">
+              {notification.type === 'success' ? '✅' : 'ℹ️'}
+            </span>
+            <span className="toast-message">{notification.message}</span>
+          </div>
+        ))}
       </div>
     );
   };
@@ -199,43 +361,19 @@ function App() {
     return (
       <>
         <Login onLogin={handleLogin} />
-        {renderNotification()}
+        {renderNotifications()}
       </>
     );
   }
 
   return (
     <div className="app-container">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h1 className="logo"><span>📚</span> Biblio</h1>
-        </div>
-
-        <div className="sidebar-nav">
-          <ul className="nav-list">
-            <li
-              className={`nav-item \${currentCategory === 'all' ? 'active' : ''}`}
-              onClick={() => setCurrentCategory('all')}
-            >
-              <span className="icon">📖</span> Mes livres
-            </li>
-            <li
-              className={`nav-item \${currentCategory === 'borrowed' ? 'active' : ''}`}
-              onClick={() => setCurrentCategory('borrowed')}
-            >
-              <span className="icon">🤝</span> Mes emprunts
-            </li>
-          </ul>
-        </div>
-
-        <div className="sidebar-footer">
-          <div className="sidebar-user">
-            <span className="user-greeting">Bonjour,</span>
-            <span className="user-name">{user}</span>
-          </div>
-          <button className="btn-secondary btn-sm btn-logout" onClick={handleLogout}>Déconnexion</button>
-        </div>
-      </aside>
+      <Sidebar 
+        user={user}
+        currentCategory={currentCategory}
+        onCategoryChange={setCurrentCategory}
+        onLogout={handleLogout}
+      />
 
       <main className="main-content">
         <header className="page-header">
@@ -250,7 +388,10 @@ function App() {
                 onChange={handleFileUpload}
               />
               <button className="btn-secondary" onClick={handleImportClick}>
-                <span className="icon">📄</span> Import CSV
+                <span className="icon">📥</span> Import CSV
+              </button>
+              <button className="btn-secondary" onClick={handleExportCSV}>
+                <span className="icon">📤</span> Export CSV
               </button>
               <button className="btn-primary" onClick={handleAdd}>
                 <span className="icon">+</span> Ajouter un Livre
@@ -269,7 +410,11 @@ function App() {
         </header>
 
         <div className="books-grid">
-          {filteredBooks.length > 0 ? (
+          {loading ? (
+            <div className="empty-state">
+              <p>Chargement des livres depuis Supabase...</p>
+            </div>
+          ) : filteredBooks.length > 0 ? (
             filteredBooks.map(book => (
               <BookCard
                 key={book.id}
@@ -280,7 +425,7 @@ function App() {
             ))
           ) : (
             <div className="empty-state">
-              <p>Aucun livre trouvé pour "{searchQuery}"</p>
+              <p>{searchQuery ? `Aucun livre trouvé pour "\${searchQuery}"` : "Aucun livre dans votre bibliothèque"}</p>
             </div>
           )}
         </div>
@@ -300,7 +445,7 @@ function App() {
         bookTitle={borrowingBook?.title}
       />
 
-      {renderNotification()}
+      {renderNotifications()}
     </div>
   )
 }

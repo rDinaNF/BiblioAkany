@@ -30,7 +30,10 @@ const BookCard = ({ book, onStatusChange, onEdit }) => {
             {book.status === 'unread' && book.borrower && (
               <div className="borrower-info">
                 <span className="borrower-name">👤 {book.borrower.name}</span>
-                <span className="borrower-date">📅 {book.borrower.date}</span>
+                <span className="borrower-date">📅 Emprunt : {book.borrower.date}</span>
+                {book.borrower.dueDate && (
+                  <span className="borrower-date">⌛ Retour : {book.borrower.dueDate}</span>
+                )}
               </div>
             )}
           </div>
