@@ -395,10 +395,10 @@ function App() {
         <header className="page-header">
           <div className="header-top">
             <div className="header-title-container">
+              <h2>{currentCategory === 'all' ? 'Mes Livres' : 'Mes Emprunts'}</h2>
               <button className="btn-menu-toggle" onClick={() => setIsSidebarOpen(true)}>
                 <span>☰</span>
               </button>
-              <h2>{currentCategory === 'all' ? 'Mes Livres' : 'Mes Emprunts'}</h2>
             </div>
             <div className="header-actions">
               <input
