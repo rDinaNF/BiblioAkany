@@ -30,6 +30,7 @@ function App() {
 
   const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false)
   const [borrowingBook, setBorrowingBook] = useState(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
     fetchBooks()
@@ -380,16 +381,26 @@ function App() {
       <Sidebar 
         user={user}
         currentCategory={currentCategory}
-        onCategoryChange={setCurrentCategory}
+        onCategoryChange={(cat) => {
+          setCurrentCategory(cat);
+          setIsSidebarOpen(false); // Close sidebar on mobile after selection
+        }}
         onLogout={handleLogout}
         books={books}
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
       <main className="main-content">
         <header className="page-header">
           <div className="header-top">
-            <h2>{currentCategory === 'all' ? 'Mes Livres' : 'Mes Emprunts'}</h2>
-            <div className="header-actions" style={{ display: 'flex', gap: '1rem' }}>
+            <div className="header-title-container">
+              <button className="btn-menu-toggle" onClick={() => setIsSidebarOpen(true)}>
+                <span>☰</span>
+              </button>
+              <h2>{currentCategory === 'all' ? 'Mes Livres' : 'Mes Emprunts'}</h2>
+            </div>
+            <div className="header-actions">
               <input
                 type="file"
                 accept=".csv"

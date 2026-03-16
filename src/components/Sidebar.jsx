@@ -1,14 +1,19 @@
 import React from 'react';
 
-const Sidebar = ({ user, currentCategory, onCategoryChange, onLogout, books = [] }) => {
+const Sidebar = ({ user, currentCategory, onCategoryChange, onLogout, books = [], isOpen, onToggle }) => {
   // Extract unique categories from books
   const categories = Array.from(new Set(books.map(b => b.category).filter(Boolean))).sort();
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <h1 className="logo"><span>📚</span> Biblio Akany Ando</h1>
-      </div>
+    <>
+      {/* Overlay for mobile */}
+      {isOpen && <div className="sidebar-overlay" onClick={onToggle}></div>}
+      
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <h1 className="logo"><span>📚</span> Biblio Akany Ando</h1>
+          <button className="btn-sidebar-close" onClick={onToggle}>&times;</button>
+        </div>
 
       <div className="sidebar-nav">
         <ul className="nav-list">
@@ -54,6 +59,7 @@ const Sidebar = ({ user, currentCategory, onCategoryChange, onLogout, books = []
         </button>
       </div>
     </aside>
+    </>
   );
 };
 
