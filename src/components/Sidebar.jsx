@@ -1,6 +1,9 @@
 import React from 'react';
 
-const Sidebar = ({ user, currentCategory, onCategoryChange, onLogout }) => {
+const Sidebar = ({ user, currentCategory, onCategoryChange, onLogout, books = [] }) => {
+  // Extract unique categories from books
+  const categories = Array.from(new Set(books.map(b => b.category).filter(Boolean))).sort();
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -22,6 +25,23 @@ const Sidebar = ({ user, currentCategory, onCategoryChange, onLogout }) => {
             <span className="icon">🤝</span> Mes emprunts
           </li>
         </ul>
+
+        {categories.length > 0 && (
+          <>
+            <div className="nav-section-title">Mes catégories</div>
+            <ul className="nav-list">
+              {categories.map(cat => (
+                <li
+                  key={cat}
+                  className={`nav-item ${currentCategory === cat ? 'active' : ''}`}
+                  onClick={() => onCategoryChange(cat)}
+                >
+                  <span className="icon">🏷️</span> {cat}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
 
       <div className="sidebar-footer">

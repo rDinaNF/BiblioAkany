@@ -26,7 +26,7 @@ function App() {
 
   const fileInputRef = useRef(null)
   const [notifications, setNotifications] = useState([])
-  const [currentCategory, setCurrentCategory] = useState('all') // 'all' or 'borrowed'
+  const [currentCategory, setCurrentCategory] = useState('all') // 'all', 'borrowed', or specific category name
 
   const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false)
   const [borrowingBook, setBorrowingBook] = useState(null)
@@ -49,6 +49,7 @@ function App() {
         id: b.id,
         title: b.title,
         author: b.author,
+        category: b.category,
         status: b.status,
         coverColor: b.cover_color,
         coverImage: b.cover_image,
@@ -160,6 +161,7 @@ function App() {
       const dbData = {
         title: bookData.title,
         author: bookData.author,
+        category: bookData.category,
         status: bookData.status || 'read',
         cover_color: bookData.coverColor,
         cover_image: bookData.coverImage
@@ -338,7 +340,14 @@ function App() {
   const filteredBooks = books.filter(book => {
     const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       book.author.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = currentCategory === 'all' || book.status === 'unread';
+    
+    let matchesCategory = true;
+    if (currentCategory === 'borrowed') {
+      matchesCategory = book.status === 'unread';
+    } else if (currentCategory !== 'all') {
+      matchesCategory = book.category === currentCategory;
+    }
+    
     return matchesSearch && matchesCategory;
   })
 
@@ -373,6 +382,7 @@ function App() {
         currentCategory={currentCategory}
         onCategoryChange={setCurrentCategory}
         onLogout={handleLogout}
+        books={books}
       />
 
       <main className="main-content">

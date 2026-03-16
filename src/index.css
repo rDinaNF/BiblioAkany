@@ -113,6 +113,15 @@ h3 {
   color: var(--primary-color);
 }
 
+.nav-section-title {
+  padding: 1.5rem 1.5rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
 .sidebar-footer {
   padding: 1.5rem;
   border-top: 1px solid var(--border-color);

@@ -4,6 +4,7 @@ const BookModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [formData, setFormData] = useState({
     title: '',
     author: '',
+    category: '',
     status: 'unread',
     coverColor: 'linear-gradient(135deg, #a8ff78, #78ffd6)', // Default color
     coverImage: null // Base64 image
@@ -27,6 +28,7 @@ const BookModal = ({ isOpen, onClose, onSave, initialData }) => {
       setFormData({
         title: '',
         author: '',
+        category: '',
         status: 'unread',
         coverColor: randomColor,
         coverImage: null
@@ -80,6 +82,23 @@ const BookModal = ({ isOpen, onClose, onSave, initialData }) => {
               onChange={e => setFormData({...formData, author: e.target.value})}
               placeholder="Ex: Antoine de Saint-Exupéry"
             />
+          </div>
+          <div className="form-group">
+            <label>Catégorie</label>
+            <input 
+              type="text" 
+              list="categories-list"
+              value={formData.category} 
+              onChange={e => setFormData({...formData, category: e.target.value})}
+              placeholder="Ex: Bibliothèque verte, Roman..."
+            />
+            <datalist id="categories-list">
+              <option value="Bibliothèque verte" />
+              <option value="Bibliothèque rose" />
+              <option value="Roman" />
+              <option value="Bande dessinée" />
+              <option value="Documentaire" />
+            </datalist>
           </div>
           <div className="form-group">
             <label>Statut</label>
